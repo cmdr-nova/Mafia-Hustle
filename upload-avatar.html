@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Avatar</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Avatar</h1>
+        <form id="avatar-form" enctype="multipart/form-data">
+            <input type="file" id="avatar" name="avatar" accept="image/*">
+            <button type="submit">Upload</button>
+        </form>
+        <p id="message"></p>
+    </div>
+    <script>
+        document.getElementById('avatar-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData();
+            formData.append('avatar', document.getElementById('avatar').files[0]);
+            fetch('/api/upload-avatar', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('message').innerText = data.error;
+                } else {
+                    document.getElementById('message').innerText = 'Avatar uploaded successfully!';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
