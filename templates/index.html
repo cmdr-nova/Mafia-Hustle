@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mafia Hustle</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+        }
+        .sidebar-left, .sidebar-right {
+            width: 250px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-right: 1px solid #dee2e6;
+        }
+        .sidebar-right {
+            border-left: 1px solid #dee2e6;
+        }
+        .content {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+        }
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: block;
+            margin: 0 auto 10px;
+        }
+        .sidebar-left {
+            text-align: center;
+        }
+        #additional-player-info {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-left">
+        <h4>Player Info</h4>
+        <div id="player-info">
+            <!-- Display user avatar -->
+            <img src="{{ current_user.avatar or url_for('static', filename='default_avatar.png') }}" alt="User Avatar" class="user-avatar">
+            <br />
+            <!-- Display player name -->
+            <h5>{{ current_user.username }}</h5>
+            <!-- Container for additional player information -->
+            <div id="additional-player-info"></div>
+            <!-- Upload Avatar -->
+            <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+            <button id="upload-avatar-btn" class="btn btn-primary">Upload Avatar</button>
+        </div>
+    </div>
+    <div class="content">
+        <h1>Welcome to Mafia Hustle!</h1>
+        <div id="game-screen">
+            <button id="attack-btn" class="btn btn-primary">Attack</button>
+            <button id="run-job-btn" class="btn btn-secondary">Run Job</button>
+            <button id="heal-up-btn" class="btn btn-success">Heal Up</button>
+            <button id="log-out-btn" class="btn btn-danger">Log Out</button>
+        </div>
+    </div>
+    <div class="sidebar-right">
+        <h4>Leaderboard</h4>
+        <ul id="leaderboard" class="list-group">
+            <!-- Leaderboard information will be populated here -->
+        </ul>
+    </div>
+
+    <!-- Hidden input to store the username -->
+    <input type="hidden" id="username" value="{{ current_user.username if current_user.is_authenticated else '' }}">
+
+    <script>
+        async function fetchPlayerInfo() {
+            const username = document.getElementById('username').value;
+            if (!username) {
+                window.location.href = '/login';
+                return;
+            }
+            const response = await fetch(`/api/player-info?username=${username}`);
+            const data = await response.json();
+            const additionalPlayerInfo = document.getElementById('additional-player-info');
+            if (data.error) {
+                additionalPlayerInfo.innerHTML = `<p>${data.error}</p>`;
+            } else {
+                additionalPlayerInfo.innerHTML = `
+                    <p>Health: ${data.health}</p>
+                    <p>Money: ${data.money}</p>
+                    <p>Level: ${data.level}</p>
+                    <p>Points: ${data.points}</p>
+                    <p>Kills: ${data.kills}</p>
+                    <p>Prestige: ${data.prestige}</p>
+                `;
+            }
+        }
+
+        async function fetchLeaderboard() {
+            const response = await fetch('/api/leaderboard');
+            const data = await response.json();
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = '';
+            data.leaderboard.forEach(player => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+                listItem.textContent = `${player.username} - Kills: ${player.kills}, Points: ${player.points}`;
+                leaderboard.appendChild(listItem);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchPlayerInfo();
+            fetchLeaderboard();
+
+            const uploadAvatarBtn = document.getElementById('upload-avatar-btn');
+            const avatarUpload = document.getElementById('avatar-upload');
+
+            uploadAvatarBtn.addEventListener('click', () => {
+                avatarUpload.click();
+            });
+
+            avatarUpload.addEventListener('change', async () => {
+                const file = avatarUpload.files[0];
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('avatar', file);
+
+                    const response = await fetch('/upload-avatar', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        // Reload the page to show the new avatar
+                        window.location.reload();
+                    } else {
+                        alert('Failed to upload avatar');
+                    }
+                }
+            });
+        });
+
+        async function attack() {
+            const attacker = document.getElementById('username').value;
+            const defender = prompt('Enter the username of the player you want to attack:');
+            const response = await fetch('/api/attack', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ attacker, defender })
+            });
+            const data = await response.json();
+            alert(data.message);
+            fetchPlayerInfo();
+        }
+
+        async function runJob() {
+            const username = document.getElementById('username').value;
+            const response = await fetch('/api/run-job', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username })
+            });
+            const data = await response.json();
+            alert(data.message);
+            fetchPlayerInfo();
+        }
+
+        async function healUp() {
+            const username = document.getElementById('username').value;
+            const response = await fetch('/api/heal-up', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username })
+            });
+            const data = await response.json();
+            alert(data.message);
+            fetchPlayerInfo();
+        }
+
+        async function logOut() {
+            const username = document.getElementById('username').value;
+            const response = await fetch('/api/logoff', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username })
+            });
+            const data = await response.json();
+            alert(data.message);
+            if (!data.error) {
+                window.location.reload();
+            }
+        }
+
+        // Fetch player info and leaderboard when the page loads
+        window.onload = () => {
+            fetchPlayerInfo();
+            fetchLeaderboard();
+            document.getElementById('attack-btn').onclick = attack;
+            document.getElementById('run-job-btn').onclick = runJob;
+            document.getElementById('heal-up-btn').onclick = healUp;
+            document.getElementById('log-out-btn').onclick = logOut;
+        };
+    </script>
+</body>
+</html>
