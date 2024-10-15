@@ -5,3 +5,5 @@ This is an **incomplete** Mafia Wars clone, stripped down to its absolute basics
 The code has errors in it, some stuff is there that probably shouldn't be. This is mostly hacked together through things I've been learning, and lots of Google searches. 
 
 Absolutely fork this if you feel up to the task, but I'm putting it here as a, "Hey, I was gonna do this, but I decided definitively, **not to**."
+
+(the database probably needs to be remade, because I scrubbed my own info out of it)
