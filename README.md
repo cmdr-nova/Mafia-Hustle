@@ -21,6 +21,7 @@ Features:
 Planned, not implemented:
 
 - users should be able to buy weapons
+- users should be able to buy armor
 - users should have a home base where they can't be attacked
 - the game should show your avatar to other players
 - an "active player" database with search function
