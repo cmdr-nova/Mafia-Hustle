@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Lockfile is up to date
+        run: uv lock --check
+      - name: Ruff lint (includes bandit security rules)
+        run: uv run --frozen ruff check --output-format=github .
+      - name: Ruff format
+        run: uv run --frozen ruff format --check .
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install
+        run: uv sync --frozen
+      - name: Run tests
+        run: uv run --frozen pytest --cov --cov-report=term-missing --cov-report=xml
+      - name: Upload coverage report
+        if: matrix.python-version == '3.13'
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage.xml
+
+  smoke:
+    name: App starts and serves the login page
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Install
+        run: uv sync --frozen --extra prod
+      - name: Boot with gunicorn and request /login
+        env:
+          SECRET_KEY: ci-only-not-a-real-secret
+        run: |
+          uv run --frozen gunicorn --bind 127.0.0.1:8000 --daemon --pid gunicorn.pid wsgi:app
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:8000/login > /dev/null && break
+            sleep 0.5
+          done
+          curl -fsS http://127.0.0.1:8000/login | grep -q "Mafia Hustle"
+          kill "$(cat gunicorn.pid)"
+
+  audit:
+    name: Dependency vulnerabilities
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+      - name: Export locked dependencies
+        run: uv export --frozen --no-emit-project --all-extras --format requirements-txt > requirements-audit.txt
+      - name: pip-audit
+        run: uvx pip-audit --strict --require-hashes --disable-pip -r requirements-audit.txt
+
+  secrets:
+    name: Secret scan (full history)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
