@@ -9,8 +9,11 @@ dependencies = [
     "flask-login>=0.6.3",
     "flask-sqlalchemy>=3.1",
     "flask-wtf>=1.2",
-    "flask-bcrypt>=1.0",
+    "dnspython>=2.6",
+    "joserfc>=1.0",
     "python-dotenv>=1.0",
+    "requests>=2.32.2",
+    "requests-hardened>=1.0",
 ]
 
 [project.optional-dependencies]
@@ -20,6 +23,7 @@ prod = ["gunicorn>=23"]
 dev = [
     "pytest>=8",
     "pytest-cov>=6",
+    "responses>=0.25",
     "ruff>=0.12",
 ]
 

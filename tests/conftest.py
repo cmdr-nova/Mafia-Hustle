@@ -30,7 +30,7 @@ def client(app):
 @pytest.fixture
 def make_user(app):
     def make(username, **stats):
-        user = User(username=username, password="x", **stats)
+        user = User(provider="fediverse", subject=f"test:{username}", username=username, **stats)
         db.session.add(user)
         db.session.commit()
         return user

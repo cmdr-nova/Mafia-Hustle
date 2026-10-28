@@ -12,11 +12,16 @@ def create_app(test_config=None):
     app.config.from_mapping(
         SECRET_KEY=os.environ.get("SECRET_KEY"),
         SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", "sqlite:///mafia_hustle.db"),
+        # Where the game lives on the internet, e.g. https://hustle.example.com. Needed for
+        # Bluesky logins in production. Leave unset for local development.
+        PUBLIC_URL=os.environ.get("PUBLIC_URL"),
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
     )
     if test_config:
         app.config.update(test_config)
+    if (app.config.get("PUBLIC_URL") or "").startswith("https://"):
+        app.config["SESSION_COOKIE_SECURE"] = True
 
     # Flask signs the login cookie with this key. A guessable key means anyone can forge a
     # cookie and log in as any player, so refuse to start without a real one.
