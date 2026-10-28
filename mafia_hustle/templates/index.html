@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row g-4">
+    <aside class="col-md-3 text-center">
+        <img src="{{ current_user.avatar_url or url_for('static', filename='default_avatar.png') }}"
+             alt="" class="user-avatar mb-2" referrerpolicy="no-referrer">
+        <h4 class="text-break">{{ current_user.username }}</h4>
+        <dl id="stats" class="row text-start small mt-3"></dl>
+        <form method="POST" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-outline-danger btn-sm">Log out</button>
+        </form>
+    </aside>
+
+    <main class="col-md-5">
+        <h1 class="mb-3">The Streets</h1>
+        <div class="d-flex gap-2 mb-3">
+            <button id="run-job-btn" class="btn btn-secondary">Run a job</button>
+            <button id="heal-up-btn" class="btn btn-success">Find food</button>
+        </div>
+        <ul id="action-log" class="list-group"></ul>
+    </main>
+
+    <aside class="col-md-4">
+        <h4>Leaderboard</h4>
+        <ul id="leaderboard" class="list-group"></ul>
+    </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.CURRENT_USER_ID = {{ current_user.id | tojson }};</script>
+<script src="{{ url_for('static', filename='game.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Log in · Mafia Hustle{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width: 440px;">
+    <h1 class="mb-1 text-center">Mafia Hustle</h1>
+    <p class="text-center text-body-secondary mb-4">Sign in with an account you already have. No passwords here.</p>
+
+    <form method="POST" action="{{ url_for('auth.fediverse_start') }}" class="card card-body mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h4>Fediverse</h4>
+        <label for="instance" class="form-label small text-body-secondary">
+            Your server or handle. Mastodon, GoToSocial, Akkoma, and friends all work.
+        </label>
+        <input class="form-control mb-2" id="instance" name="instance"
+               placeholder="@you@mkultra.social" autocomplete="username" required>
+        <button class="btn btn-primary w-100">Sign in with the fediverse</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('auth.bluesky_start') }}" class="card card-body">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h4>Bluesky / AT Protocol</h4>
+        <label for="handle" class="form-label small text-body-secondary">
+            Your handle. Leave it blank to pick your account on bsky.social.
+        </label>
+        <input class="form-control mb-2" id="handle" name="handle"
+               placeholder="you.bsky.social" autocomplete="username">
+        <button class="btn btn-info w-100">Sign in with Bluesky</button>
+    </form>
+</div>
+{% endblock %}
