@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Log in · Mafia Hustle{% endblock %}
+{% block content %}
+<div class="mx-auto" style="max-width: 420px;">
+    <h1 class="mb-4 text-center">Mafia Hustle</h1>
+    <form method="POST" action="{{ url_for('auth.login') }}" class="mb-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h4>Log in</h4>
+        <input class="form-control mb-2" name="username" placeholder="Username" autocomplete="username" required>
+        <input class="form-control mb-2" type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+        <button class="btn btn-primary w-100">Log in</button>
+    </form>
+    <form method="POST" action="{{ url_for('auth.register') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h4>Register</h4>
+        <input class="form-control mb-2" name="username" placeholder="Username" autocomplete="username" required>
+        <input class="form-control mb-2" type="password" name="password" placeholder="Password (8+ characters)" autocomplete="new-password" minlength="8" required>
+        <button class="btn btn-secondary w-100">Register</button>
+    </form>
+</div>
+{% endblock %}
