@@ -157,3 +157,35 @@ def test_profile_url():
     assert url("fediverse", "@vito@evil.example/../x") is None
     assert url("bluesky", "javascript:alert(1)") is None
     assert url("bot", "Knuckles Malone") is None
+
+
+def test_leaderboard_pins_your_rank_when_outside_the_top_ten(client, make_user, login):
+    for i in range(12):
+        make_user(f"hitter{i}", kills=10 + i)
+    tied = make_user("tied", kills=1)
+    me = make_user("me", kills=1)
+    login(me)
+    data = client.get("/api/leaderboard").get_json()
+    assert len(data["leaderboard"]) == 10
+    assert data["me"]["username"] == "me"
+    assert data["me"]["rank"] == 13  # tied with "tied", behind the 12 hitters
+    assert "money" not in data["me"]
+
+    login(tied)
+    assert client.get("/api/leaderboard").get_json()["me"]["rank"] == 13
+
+
+def test_no_pinned_rank_inside_the_top_ten_or_logged_out(client, make_user, login):
+    star = make_user("star", kills=99)
+    assert client.get("/api/leaderboard").get_json()["me"] is None
+    login(star)
+    assert client.get("/api/leaderboard").get_json()["me"] is None
+
+
+def test_rank_breaks_kill_ties_by_level_then_points(make_user):
+    from mafia_hustle.game import rank_of
+
+    make_user("a", kills=2, level=3, points=50)
+    b = make_user("b", kills=2, level=3, points=10)
+    c = make_user("c", kills=2, level=1, points=999)
+    assert (rank_of(b), rank_of(c)) == (2, 3)

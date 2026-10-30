@@ -16,6 +16,7 @@ ACTION_LIMIT = "2 per second;60 per minute"
 EVENTS_KEPT = 30
 EVENTS_SHOWN = 15
 TARGETS_SHOWN = 8
+LEADERBOARD_SIZE = 10
 
 
 # --- Pages and read-only API -------------------------------------------------------------------
@@ -68,9 +69,26 @@ def targets():
 @bp.get("/api/leaderboard")
 def leaderboard():
     top = db.session.scalars(
-        db.select(User).order_by(User.kills.desc(), User.level.desc(), User.points.desc()).limit(10)
+        db.select(User)
+        .order_by(User.kills.desc(), User.level.desc(), User.points.desc())
+        .limit(LEADERBOARD_SIZE)
     ).all()
-    return jsonify({"leaderboard": [public_player(u) for u in top]})
+    # Logged-in players outside the top 10 also get their own spot, for the pinned row.
+    me = None
+    if current_user.is_authenticated and current_user.id not in {u.id for u in top}:
+        me = {**public_player(current_user), "rank": rank_of(current_user)}
+    return jsonify({"leaderboard": [public_player(u) for u in top], "me": me})
+
+
+def rank_of(user):
+    """Where `user` stands on the leaderboard: 1 + everyone ranked strictly ahead of them, so
+    players tied on kills, level and points share a rank."""
+    ahead = db.or_(
+        User.kills > user.kills,
+        db.and_(User.kills == user.kills, User.level > user.level),
+        db.and_(User.kills == user.kills, User.level == user.level, User.points > user.points),
+    )
+    return 1 + db.session.scalar(db.select(db.func.count(User.id)).where(ahead))
 
 
 def public_player(user):
