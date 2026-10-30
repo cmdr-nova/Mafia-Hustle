@@ -342,6 +342,13 @@ a { color: var(--brass-hi); }
 .stats div { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .75rem; }
 .stats dt { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
 .stats dd { margin: 0; font: 1.25rem/1.2 var(--display); }
+.identity { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
+.avatar-lg { width: 72px; height: 72px; font-size: 1.6rem; border-width: 2px; }
+.monogram.avatar-lg { background: var(--brass); }
+.identity-name { font: 1.4rem/1.2 var(--display); overflow-wrap: anywhere; }
+.identity-handle { display: block; color: var(--muted); font-size: .9rem; overflow-wrap: anywhere; text-decoration: none; }
+a.identity-handle:hover { color: var(--brass-hi); text-decoration: underline; }
+.network-tag { display: inline-block; margin-top: .35rem; font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: var(--sky); border: 1px solid #36506a; border-radius: 4px; padding: .05rem .4rem; }
 .skills { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: .6rem; }
 
 /* --- The Wire ------------------------------------------------------------------------------- */

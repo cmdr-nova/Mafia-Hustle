@@ -1,4 +1,5 @@
 import random
+import re
 
 from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
@@ -23,7 +24,27 @@ TARGETS_SHOWN = 8
 @bp.route("/")
 @login_required
 def index():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        profile_url=profile_url(current_user),
+        network=NETWORK_NAMES.get(current_user.provider, current_user.provider),
+    )
+
+
+NETWORK_NAMES = {"fediverse": "Fediverse", "bluesky": "Bluesky", "bot": "Bot"}
+HANDLE_PART = re.compile(r"[A-Za-z0-9._-]+")
+
+
+def profile_url(user):
+    """Link to the player's own profile on their network, or None if we can't build a safe one.
+    Fediverse handles look like @name@instance, Bluesky handles like name.bsky.social."""
+    if user.provider == "fediverse":
+        name, _, domain = user.username.lstrip("@").partition("@")
+        if HANDLE_PART.fullmatch(name) and HANDLE_PART.fullmatch(domain) and "." in domain:
+            return f"https://{domain}/@{name}"
+    elif user.provider == "bluesky" and HANDLE_PART.fullmatch(user.username):
+        return f"https://bsky.app/profile/{user.username}"
+    return None
 
 
 @bp.get("/api/state")

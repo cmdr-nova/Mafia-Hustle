@@ -131,3 +131,29 @@ def test_favicon(client):
     response = client.get("/favicon.ico")
     assert response.status_code == 200
     assert response.mimetype == "image/svg+xml"
+
+
+def test_profile_shows_who_you_are_on_your_network(client, make_user, login):
+    user = make_user(
+        "@vito@fedi.example.org", display_name="Vito", avatar_url="https://fedi.example.org/a.png"
+    )
+    login(user)
+    page = client.get("/").get_data(as_text=True)
+    assert 'src="https://fedi.example.org/a.png"' in page
+    assert 'href="https://fedi.example.org/@vito"' in page
+    assert "Fediverse" in page
+
+
+def test_profile_url():
+    from types import SimpleNamespace
+
+    from mafia_hustle.game import profile_url
+
+    def url(provider, username):
+        return profile_url(SimpleNamespace(provider=provider, username=username))
+
+    assert url("fediverse", "@vito@fedi.example.org") == "https://fedi.example.org/@vito"
+    assert url("bluesky", "vito.bsky.social") == "https://bsky.app/profile/vito.bsky.social"
+    assert url("fediverse", "@vito@evil.example/../x") is None
+    assert url("bluesky", "javascript:alert(1)") is None
+    assert url("bot", "Knuckles Malone") is None
