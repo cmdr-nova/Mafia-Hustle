@@ -26,6 +26,8 @@ jobs:
         run: uv run --frozen ruff check --output-format=github .
       - name: Ruff format
         run: uv run --frozen ruff format --check .
+      - name: Shellcheck deploy scripts
+        run: shellcheck deploy/*.sh
 
   test:
     name: Tests (Python ${{ matrix.python-version }})

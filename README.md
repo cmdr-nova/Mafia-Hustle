@@ -23,22 +23,15 @@ Then open **http://127.0.0.1:5000** (use `127.0.0.1`, not `localhost`: Bluesky's
 
 ## Running it in production
 
-Set these in the environment (or `.env`):
+[`deploy/README.md`](deploy/README.md) has the full walkthrough. It covers a systemd service, a Caddy site block, and automatic deploys from GitHub whenever CI passes on `main`. The settings it uses:
 
 | Variable | What it's for |
 | --- | --- |
 | `SECRET_KEY` | Signs login cookies. Required. The app refuses to start without it. |
-| `PUBLIC_URL` | The public https address, e.g. `https://hustle.example.com`. Required for Bluesky logins, and turns on secure cookies. |
-| `DATABASE_URL` | Optional. Defaults to SQLite in `instance/`. |
-
-Then run it with gunicorn behind your reverse proxy:
-
-```bash
-uv sync --extra prod
-uv run gunicorn --bind 127.0.0.1:8000 wsgi:app
-```
-
-Bluesky servers fetch `PUBLIC_URL/oauth/client-metadata.json` to learn about the app, so that URL has to be reachable from the internet.
+| `PUBLIC_URL` | The public https address, e.g. `https://hustle.mkultra.monster`. Required for Bluesky logins, and turns on secure cookies. |
+| `INSTANCE_PATH` | Folder for the SQLite database. Defaults to `instance/` next to the code. |
+| `TRUST_PROXY` | Number of reverse proxies in front (usually `1`), so rate limits see real player IPs. |
+| `DATABASE_URL` | Optional. Use a different database than SQLite. |
 
 ## How login works
 
