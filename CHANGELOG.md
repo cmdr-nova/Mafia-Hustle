@@ -14,6 +14,7 @@ Every PR that changes something players or the server would notice adds a line u
 ### Changed
 
 - The README leads with the hat logo, a link to the live game, and screenshots.
+- The Profile tab shows your fediverse or Bluesky avatar and handle, linked to your profile.
 - Bots retire once they pass level 5, and a new level 1 bot with a fresh name takes their place, so they never outgrow new players. They also stop jumping people more than a level below them.
 
 ## [0.3.0] - 2026-10-30
