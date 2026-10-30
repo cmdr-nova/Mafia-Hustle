@@ -19,13 +19,15 @@ from flask import (
 )
 from flask_login import login_required, login_user, logout_user
 
-from .extensions import db
+from .extensions import db, limiter
 from .models import FediverseApp, PendingLogin, User, utcnow
 from .oauth import atproto, fediverse, safe_http
 
 bp = Blueprint("auth", __name__)
 
 PENDING_LOGIN_TTL = timedelta(minutes=10)
+# Starting a login makes our server contact the player's server, so cap how often that happens.
+LOGIN_LIMIT = "10 per minute"
 LOGIN_ERRORS = (
     fediverse.FediverseError,
     atproto.AtprotoError,
@@ -52,6 +54,7 @@ def logout():
 
 
 @bp.post("/login/fediverse")
+@limiter.limit(LOGIN_LIMIT)
 def fediverse_start():
     try:
         domain = fediverse.normalize_instance(request.form.get("instance"))
@@ -108,6 +111,7 @@ def fediverse_app(domain, redirect_uri):
 
 
 @bp.post("/login/bluesky")
+@limiter.limit(LOGIN_LIMIT)
 def bluesky_start():
     try:
         client_id, redirect_uri = bluesky_client()

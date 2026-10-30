@@ -13,6 +13,7 @@ def app():
             "SECRET_KEY": "test-secret",
             "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
             "WTF_CSRF_ENABLED": False,
+            "RATELIMIT_ENABLED": False,
         }
     )
     with app.app_context():

@@ -72,8 +72,8 @@ def attack(attacker, defender, rng):
     return message + f" +{POINTS_PER_ACTION} points."
 
 
-def run_job(user, targets, rng):
-    """Run a job: rob a random player. Returns a message for the player."""
+def run_job(user, target, rng):
+    """Run a job: rob `target` (a random other player, or None if there isn't one)."""
     if is_dead(user):
         return "You're dead. Heal up before you take a job."
 
@@ -82,10 +82,9 @@ def run_job(user, targets, rng):
     if is_dead(user):
         return f"The job went sideways. You took {damage} damage and died."
 
-    if not targets:
+    if target is None:
         return f"Nobody to rob yet. You took {damage} damage for nothing."
 
-    target = rng.choice(targets)
     # Never take more than the target has, so nobody's money goes negative.
     stolen = min(rng.randint(10, 100), max(target.money, 0))
     user.money += stolen

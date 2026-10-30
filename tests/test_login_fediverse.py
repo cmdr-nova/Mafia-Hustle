@@ -7,15 +7,20 @@ from mafia_hustle.extensions import db
 from mafia_hustle.models import FediverseApp, User
 from mafia_hustle.oauth import fediverse
 
-INSTANCE = "https://mkultra.social"
+INSTANCE = "https://fedi.example.org"
 
 
 @pytest.mark.parametrize(
     "raw",
-    ["mkultra.social", "https://mkultra.social/", "@vito@mkultra.social", " Vito@MKULTRA.social "],
+    [
+        "fedi.example.org",
+        "https://fedi.example.org/",
+        "@vito@fedi.example.org",
+        " Vito@FEDI.Example.ORG ",
+    ],
 )
 def test_normalize_instance(raw):
-    assert fediverse.normalize_instance(raw) == "mkultra.social"
+    assert fediverse.normalize_instance(raw) == "fedi.example.org"
 
 
 @pytest.mark.parametrize("raw", ["", "localhost", "127.0.0.1", "10.0.0.1", "intranet", "a b.com"])
@@ -43,7 +48,7 @@ def mock_instance(rsps, account_id="109", username="vito"):
     rsps.post(f"{INSTANCE}/oauth/revoke", json={})
 
 
-def start(client, instance="@vito@mkultra.social"):
+def start(client, instance="@vito@fedi.example.org"):
     response = client.post("/login/fediverse", data={"instance": instance})
     assert response.status_code == 302
     location = urlsplit(response.headers["Location"])
@@ -67,8 +72,8 @@ def test_full_login(client):
 
     user = db.session.scalar(db.select(User))
     assert user.provider == "fediverse"
-    assert user.subject == "mkultra.social:109"
-    assert user.username == "@vito@mkultra.social"
+    assert user.subject == "fedi.example.org:109"
+    assert user.username == "@vito@fedi.example.org"
     assert user.avatar_url == f"{INSTANCE}/avatars/vito.png"
     assert client.get("/").status_code == 200
 
@@ -93,7 +98,7 @@ def test_second_login_reuses_app_and_same_account(client):
     registrations = [c for c in responses.calls if c.request.url.endswith("/api/v1/apps")]
     assert len(registrations) == 1
     assert db.session.scalar(db.select(db.func.count(User.id))) == 1
-    assert db.session.get(FediverseApp, "mkultra.social").client_id == "cid"
+    assert db.session.get(FediverseApp, "fedi.example.org").client_id == "cid"
 
 
 @responses.activate
@@ -126,7 +131,7 @@ def test_cancelled_login(client):
 def test_unreachable_instance_shows_error(client):
     responses.post(f"{INSTANCE}/api/v1/apps", status=500)
     response = client.post(
-        "/login/fediverse", data={"instance": "mkultra.social"}, follow_redirects=True
+        "/login/fediverse", data={"instance": "fedi.example.org"}, follow_redirects=True
     )
     assert b"refused to register" in response.data
 

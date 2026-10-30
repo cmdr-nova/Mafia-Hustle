@@ -8,6 +8,7 @@ dependencies = [
     "flask>=3.1",
     "flask-login>=0.6.3",
     "flask-sqlalchemy>=3.1",
+    "flask-limiter>=3.8",
     "flask-wtf>=1.2",
     "dnspython>=2.6",
     "joserfc>=1.0",

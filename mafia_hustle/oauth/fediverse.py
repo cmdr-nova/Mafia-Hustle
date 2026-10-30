@@ -28,8 +28,8 @@ class FediverseError(Exception):
 def normalize_instance(raw):
     """Turn whatever the player typed into a bare domain.
 
-    Accepts "mkultra.social", "https://mkultra.social/", "@vito@mkultra.social", or
-    "vito@mkultra.social".
+    Accepts "fedi.example.org", "https://fedi.example.org/", "@vito@fedi.example.org", or
+    "vito@fedi.example.org".
     """
     value = (raw or "").strip().lower()
     for prefix in ("https://", "http://"):
