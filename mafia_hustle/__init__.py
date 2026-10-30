@@ -1,11 +1,20 @@
 import os
 
-from flask import Flask, flash, jsonify, redirect, request, url_for
+from flask import (
+    Flask,
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    request,
+    send_from_directory,
+    url_for,
+)
 from sqlalchemy import event
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from .extensions import csrf, db, limiter, login_manager
-from .models import User
+from .models import User, upgrade_schema
 
 
 def create_app(test_config=None):
@@ -28,6 +37,9 @@ def create_app(test_config=None):
         TRUST_PROXY=int(os.environ.get("TRUST_PROXY", "0")),
         # Spelled out because the limiter otherwise remembers the last app's setting.
         RATELIMIT_ENABLED=True,
+        # Adds a page that logs you in as any bot, no OAuth needed. For local testing only;
+        # the app refuses to start with it on a public https address.
+        DEV_LOGIN=os.environ.get("DEV_LOGIN") == "1",
     )
     if test_config:
         app.config.update(test_config)
@@ -42,6 +54,9 @@ def create_app(test_config=None):
             "  python -c 'import secrets; print(secrets.token_hex())'"
         )
 
+    if app.config["DEV_LOGIN"] and (app.config.get("PUBLIC_URL") or "").startswith("https://"):
+        raise RuntimeError("DEV_LOGIN lets anyone log in as a bot. Never use it in production.")
+
     if app.config["TRUST_PROXY"]:
         n = app.config["TRUST_PROXY"]
         app.wsgi_app = ProxyFix(app.wsgi_app, x_for=n, x_proto=n, x_host=n)
@@ -54,11 +69,19 @@ def create_app(test_config=None):
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
 
+    from . import bots
     from .auth import bp as auth_bp
     from .game import bp as game_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(game_bp)
+    app.cli.add_command(bots.cli)
+    if app.config["DEV_LOGIN"]:
+        app.register_blueprint(bots.dev_bp)
+
+    @app.get("/favicon.ico")
+    def favicon():
+        return send_from_directory(app.static_folder, "favicon.svg", mimetype="image/svg+xml")
 
     @app.after_request
     def security_headers(response):
@@ -78,6 +101,7 @@ def create_app(test_config=None):
         if db.engine.dialect.name == "sqlite":
             event.listen(db.engine, "connect", tune_sqlite)
         db.create_all()
+        upgrade_schema()
 
     return app
 
@@ -94,4 +118,8 @@ def tune_sqlite(dbapi_connection, _record):
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    user = db.session.get(User, int(user_id))
+    # Bots are played by the server. Nobody gets to log in as one (outside DEV_LOGIN).
+    if user is not None and user.is_bot and not current_app.config["DEV_LOGIN"]:
+        return None
+    return user

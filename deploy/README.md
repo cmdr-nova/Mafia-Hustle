@@ -107,6 +107,33 @@ Then delete `hustle_deploy` from your computer. GitHub has the only copy it need
 
 Revert the bad commit on `main` (`git revert`, or the Revert button on the PR). CI runs on the revert and the deploy ships it. The script won't deploy an older commit on purpose, so a revert is the way back.
 
+## Bots
+
+Bots are computer players: someone to fight, someone who robs you while you sleep, and a quick way to test changes. They can't log in, and they play by the same rules as everyone else. They show up with a "bot" tag in the game.
+
+**Turn them on.** Create the crew once, then install the timer that gives each of them a turn every 5 minutes:
+
+```bash
+sudo -u mafia-hustle sh -c 'set -a; . /etc/mafia-hustle/env; cd /opt/mafia-hustle && .venv/bin/flask --app mafia_hustle bots add'
+sudo cp /opt/mafia-hustle/deploy/mafia-hustle-bots.service /opt/mafia-hustle/deploy/mafia-hustle-bots.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now mafia-hustle-bots.timer
+```
+
+**Check on them.**
+
+```bash
+systemctl list-timers mafia-hustle-bots.timer
+sudo -u mafia-hustle sh -c 'set -a; . /etc/mafia-hustle/env; cd /opt/mafia-hustle && .venv/bin/flask --app mafia_hustle bots list'
+```
+
+**Turn them off.** Stop the timer, and optionally delete every bot along with everything they own:
+
+```bash
+sudo systemctl disable --now mafia-hustle-bots.timer
+sudo -u mafia-hustle sh -c 'set -a; . /etc/mafia-hustle/env; cd /opt/mafia-hustle && .venv/bin/flask --app mafia_hustle bots remove'
+```
+
 ## Day to day
 
 ```bash
