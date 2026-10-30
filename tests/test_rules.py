@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from mafia_hustle import rules
-from mafia_hustle.catalog import GEAR_BY_KEY, JOBS_BY_KEY, RACKETS_BY_KEY
+from mafia_hustle.catalog import GEAR_BY_KEY, JOBS_BY_KEY, RACKETS, RACKETS_BY_KEY
 
 NOW = datetime(2026, 10, 30, 12, 0, 0)
 
@@ -70,11 +70,29 @@ def test_max_level_rolls_into_prestige():
 
 
 def test_regeneration_counts_whole_ticks_and_keeps_the_remainder():
+    tick = rules.REGEN_SECONDS["energy"]
     p = player(energy=5, energy_at=NOW)
-    rules.regenerate(p, NOW + timedelta(seconds=150))  # 2.5 minutes
+    later = NOW + timedelta(seconds=2.5 * tick)
+    rules.regenerate(p, later)
     assert p.energy == 7
-    assert p.energy_at == NOW + timedelta(seconds=120)
-    assert rules.seconds_to_next(p, "energy", NOW + timedelta(seconds=150)) == 30
+    assert p.energy_at == NOW + timedelta(seconds=2 * tick)
+    assert rules.seconds_to_next(p, "energy", later) == tick // 2
+
+
+def test_energy_and_stamina_take_most_of_a_day_to_refill():
+    p = player(energy=0, stamina=0, energy_at=NOW, stamina_at=NOW)
+    for bar in ("energy", "stamina"):
+        hours = rules.seconds_to_full(p, bar, NOW) / 3600
+        assert 8 <= hours <= 16, (bar, hours)
+    rules.regenerate(p, NOW + timedelta(hours=1))
+    assert p.energy <= 3 and p.stamina <= 1
+
+
+def test_seconds_to_full():
+    tick = rules.REGEN_SECONDS["stamina"]
+    p = player(stamina=7, stamina_at=NOW)
+    assert rules.seconds_to_full(p, "stamina", NOW + timedelta(seconds=10)) == 3 * tick - 10
+    assert rules.seconds_to_full(player(), "stamina", NOW) is None
 
 
 def test_regeneration_stops_at_the_cap():
@@ -89,7 +107,7 @@ def test_full_bars_dont_bank_time():
     rules.regenerate(p, NOW)
     assert p.energy_at == NOW
     p.energy = 0
-    rules.regenerate(p, NOW + timedelta(seconds=59))
+    rules.regenerate(p, NOW + timedelta(seconds=rules.REGEN_SECONDS["energy"] - 1))
     assert p.energy == 0
 
 
@@ -251,8 +269,18 @@ def test_buying_gear():
 def test_racket_prices_climb():
     stand = RACKETS_BY_KEY["shoeshine"]
     prices = [rules.racket_price(stand, n) for n in range(4)]
-    assert prices[0] == 1500
-    assert prices == sorted(prices) and len(set(prices)) == 4
+    assert prices == [2000, 2500, 3120, 3910]
+    assert all(isinstance(price, int) for price in prices)
+
+
+def test_each_racket_tier_costs_exponentially_more():
+    prices = [r.price for r in RACKETS]
+    assert prices[0] == 2000
+    assert all(later == 5 * earlier for earlier, later in zip(prices, prices[1:], strict=False))
+    assert prices[-1] >= 6_000_000
+    # Later rackets also take longer to pay for themselves.
+    payback = [r.price / r.income for r in RACKETS]
+    assert payback == sorted(payback)
 
 
 def test_racket_income_accrues_and_caps():
@@ -272,7 +300,7 @@ def test_buying_a_racket_collects_first():
     later = NOW + timedelta(hours=2)
     assert rules.buy_racket(p, RACKETS_BY_KEY["shoeshine"], holdings, later).ok
     assert holdings == {"shoeshine": 2}
-    assert p.money == 5000 + 80 - 1720
+    assert p.money == 5000 + 80 - 2500
     assert p.income_at == later
 
 

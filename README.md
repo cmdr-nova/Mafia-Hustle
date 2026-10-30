@@ -60,10 +60,10 @@ Then open **http://127.0.0.1:5000** (use `127.0.0.1`, not `localhost`: Bluesky's
 
 ## How the game works
 
-- **Energy** pays for jobs and comes back one point a minute. **Stamina** pays for fights, one point every 2 minutes. **Health** comes back one point every 20 seconds, or all at once if you pay the doc.
+- **Energy** pays for jobs and comes back one point every 30 minutes. **Stamina** pays for fights, one point an hour. Both take most of a day to refill from empty, so the game is built for a session a day. **Health** comes back one point every 20 seconds, or all at once if you pay the doc.
 - **Jobs** unlock as you level. Better jobs cost more energy and pay more. "Work the crowd" lifts cash from another player.
 - **Fights** pit your attack against their defense, each with a random swing of 25% either way. Your best weapon, armor and ride count. Winners take part of the loser's cash.
-- **Rackets** pay by the hour. Income piles up for 12 hours, then stops until you collect it.
+- **Rackets** pay by the hour. Income piles up for 12 hours, then stops until you collect it. Each racket on the list costs 5 times the one before, and each extra copy of one costs 25% more than the last.
 - **The bank** keeps 10% of every deposit, and nobody can steal what's in it.
 - **Skill points**: 3 per level, for attack, defense, max energy, max stamina or max health.
 - **Bots** play by the same rules (see `mafia_hustle/bots.py` and "Bots" in [`deploy/README.md`](deploy/README.md)).

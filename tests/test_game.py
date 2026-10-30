@@ -12,7 +12,13 @@ def test_state_has_everything_the_screen_needs(client, make_user, login):
     login(make_user("vito"))
     data = client.get("/api/state").get_json()
     assert data["player"]["username"] == "vito"
-    assert data["bars"]["health"] == {"value": 100, "max": 100, "next_in": None, "every": 20}
+    assert data["bars"]["health"] == {
+        "value": 100,
+        "max": 100,
+        "next_in": None,
+        "full_in": None,
+        "every": 20,
+    }
     assert data["bars"]["energy"]["value"] == 20
     assert {j["key"] for j in data["jobs"]} >= {"numbers", "crowd"}
     assert data["player"]["attack"] == data["player"]["base_attack"] == 5
@@ -77,7 +83,7 @@ def test_shopping_and_rackets(client, make_user, login):
     assert data["state"]["player"]["attack"] == 7
     data = act(client, "buy", item="shoeshine")
     assert data["ok"] and data["state"]["income"]["per_hour"] == 40
-    assert data["state"]["player"]["money"] == 3000 - 400 - 1500
+    assert data["state"]["player"]["money"] == 3000 - 400 - 2000
     assert not act(client, "buy", item="knuckles")["ok"]
     assert not act(client, "buy", item="moon")["ok"]
     owned = dict(db.session.execute(db.select(Holding.item, Holding.quantity)).all())

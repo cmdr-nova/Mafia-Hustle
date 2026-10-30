@@ -14,6 +14,8 @@ Every PR that changes something players or the server would notice adds a line u
 ### Changed
 
 - The README leads with the hat logo, a link to the live game, and screenshots.
+- Rackets cost exponentially more down the list ($2k up to $6.25M), and each extra copy of the same racket costs 25% more than the last.
+- Energy now refills one point every 30 minutes and stamina one point an hour, so a full refill takes most of a day. The bars show how long until they're full.
 - Most Wanted pins your own rank under the top 10 when you're not in it.
 - The Profile tab shows your fediverse or Bluesky avatar and handle, linked to your profile.
 - Bots retire once they pass level 5, and a new level 1 bot with a fresh name takes their place, so they never outgrow new players. They also stop jumping people more than a level below them.

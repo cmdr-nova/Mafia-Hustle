@@ -99,9 +99,17 @@ function renderEvents(events) {
 const BAR_LABELS = { health: 'Health', energy: 'Energy', stamina: 'Stamina' };
 
 function clock(seconds) {
-    const m = Math.floor(seconds / 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
     const s = String(seconds % 60).padStart(2, '0');
-    return `${m}:${s}`;
+    return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+function duration(seconds) {
+    const minutes = Math.ceil(seconds / 60);
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return h ? `${h}h ${m}m` : `${m}m`;
 }
 
 function renderMeter(el, label, value, max, note) {
@@ -115,7 +123,11 @@ function renderMeter(el, label, value, max, note) {
 
 function renderBars() {
     for (const [bar, info] of Object.entries(state.bars)) {
-        const note = info.next_in === null ? 'Full' : `+1 in ${clock(info.next_in)}`;
+        let note = 'Full';
+        if (info.next_in !== null) {
+            note = `+1 in ${clock(info.next_in)}`;
+            if (info.full_in > info.next_in) note += ` · full in ${duration(info.full_in)}`;
+        }
         renderMeter($(`bar-${bar}`), BAR_LABELS[bar], info.value, info.max, note);
     }
     const health = state.bars.health;
@@ -141,6 +153,7 @@ setInterval(() => {
     for (const info of Object.values(state.bars)) {
         if (info.next_in === null) continue;
         info.next_in = Math.max(0, info.next_in - 1);
+        info.full_in = Math.max(0, info.full_in - 1);
         if (info.next_in === 0) due = true;
     }
     renderBars();
