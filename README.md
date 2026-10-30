@@ -1,10 +1,26 @@
-# Mafia Hustle
+<p align="center">
+  <img src="mafia_hustle/static/favicon.svg" width="112" height="112" alt="Mafia Hustle's gold fedora logo">
+</p>
+
+<h1 align="center">Mafia Hustle</h1>
+
+<p align="center">
+  <a href="https://hustle.mkultra.monster"><strong>Play it at hustle.mkultra.monster</strong></a>
+  <br>
+  <a href="https://github.com/cmdr-nova/Mafia-Hustle/actions/workflows/ci.yml"><img src="https://github.com/cmdr-nova/Mafia-Hustle/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status"></a>
+  <a href="https://github.com/cmdr-nova/Mafia-Hustle/releases"><img src="https://img.shields.io/github/v/release/cmdr-nova/Mafia-Hustle?sort=semver" alt="Latest release"></a>
+</p>
 
 A small browser game in the spirit of Mafia Wars. Run jobs, jump other players, buy guns, coats and cars, set up rackets that pay you by the hour, stash cash in the bank where nobody can steal it, level up to 60, then prestige forever.
 
 Players sign in with an account they already have, on the **fediverse** (Mastodon, GoToSocial, Akkoma, and anything else that speaks the Mastodon API) or on **Bluesky** (or any AT Protocol PDS). The game never sees or stores a password. All it keeps is which account you are, your handle, and your game stats. The login tokens are revoked as soon as we know who you are.
 
-Built with Flask, SQLAlchemy, and Flask-Login.
+Built with Flask, SQLAlchemy, and Flask-Login. Every change that passes CI on `main` goes live automatically.
+
+<p align="center">
+  <img src="docs/screenshot-desktop.webp" width="720" alt="The game on a desktop: health, energy and stamina bars, a grid of jobs, The Wire, and the Most Wanted list">
+  <img src="docs/screenshot-phone.webp" width="180" alt="The fight screen on a phone">
+</p>
 
 ## Running it locally
 
@@ -74,6 +90,12 @@ Game rules live in `mafia_hustle/rules.py` as plain functions with no Flask in t
 
 CI runs on every push and pull request: lint and format checks, tests on Python 3.11 to 3.14, a boot test under gunicorn, a dependency vulnerability audit, a secret scan of the full git history, and CodeQL. Dependabot opens weekly update PRs.
 
+## Releases and security
+
+The current version is in `pyproject.toml`, and what changed in each one is in [`CHANGELOG.md`](CHANGELOG.md). [`RELEASING.md`](RELEASING.md) covers version numbers, when to cut a release, and how (a button in the Actions tab).
+
+Found a security problem? Please report it privately, as described in [`SECURITY.md`](SECURITY.md), not in a public issue.
+
 ## Project layout
 
 ```
@@ -91,6 +113,8 @@ mafia_hustle/
     safe_http.py   locked-down HTTP client for talking to player-chosen servers
   templates/, static/
 tests/
+deploy/            server setup and the deploy script (see deploy/README.md)
+docs/              screenshots for this README
 wsgi.py            entry point for gunicorn
 ```
 

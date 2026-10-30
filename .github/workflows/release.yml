@@ -1,0 +1,104 @@
+name: Release
+
+# Tags a commit on main as v<version from pyproject.toml> and publishes a GitHub release whose
+# notes are that version's section of CHANGELOG.md. Run it by hand from the Actions tab once the
+# version bump has merged (see RELEASING.md). It doesn't deploy anything: main already is live.
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit on main to release (leave empty for the latest)"
+        required: false
+        default: ""
+
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Tag and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the tag and the release
+      actions: read # check that CI passed on the commit
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Pick the commit
+        id: commit
+        env:
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          if [ -z "$COMMIT" ]; then
+            sha="$(git rev-parse HEAD)"
+          else
+            if [[ ! "$COMMIT" =~ ^[0-9a-f]{7,40}$ ]]; then
+              echo "::error::'$COMMIT' doesn't look like a commit sha."
+              exit 1
+            fi
+            sha="$(git rev-parse --verify --quiet "$COMMIT^{commit}")" || {
+              echo "::error::Commit $COMMIT doesn't exist."
+              exit 1
+            }
+          fi
+          if ! git merge-base --is-ancestor "$sha" HEAD; then
+            echo "::error::$sha isn't on main. Only commits on main get released."
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Read the version
+        id: version
+        env:
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          version="$(git show "$SHA:pyproject.toml" \
+            | python3 -c 'import sys, tomllib; print(tomllib.loads(sys.stdin.read())["project"]["version"])')"
+          if git rev-parse --verify --quiet "refs/tags/v$version" > /dev/null; then
+            echo "::error::v$version is already released. Bump the version first (see RELEASING.md)."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Check CI passed on it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          passed="$(gh run list --workflow ci.yml --commit "$SHA" --status success --limit 1 \
+            --json databaseId --jq length)"
+          if [ "$passed" = "0" ]; then
+            echo "::error::CI hasn't passed on $SHA. Wait for it, or fix main first."
+            exit 1
+          fi
+
+      - name: Take the notes from CHANGELOG.md
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Everything under "## [<version>]" up to the next heading or link list, trimmed.
+          awk -v heading="## [$VERSION]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && (/^## / || /^\[[^]]+\]: /) { exit }
+            found { print }
+          ' CHANGELOG.md | sed -e '/./,$!d' > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md on main has no notes under '## [$VERSION]'."
+            exit 1
+          fi
+          cat notes.md
+
+      - name: Tag and publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.commit.outputs.sha }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "v$VERSION" --target "$SHA" --title "v$VERSION" --notes-file notes.md
+          echo "Released v$VERSION at $SHA."
