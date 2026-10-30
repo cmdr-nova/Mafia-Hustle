@@ -1,6 +1,6 @@
 [project]
 name = "mafia-hustle"
-version = "0.2.0"
+version = "0.3.0"
 description = "A small browser game in the spirit of Mafia Wars"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -54,3 +54,5 @@ select = ["E", "F", "I", "B", "UP", "S", "SIM"]
 [tool.ruff.lint.per-file-ignores]
 # assert is how pytest works, tests use throwaway secrets, and seeded dice are the point
 "tests/**" = ["S101", "S105", "S106", "S311"]
+# The job list is a table, and it reads better with one job per line
+"mafia_hustle/catalog.py" = ["E501"]

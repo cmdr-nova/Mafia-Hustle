@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Play as a bot · Mafia Hustle{% endblock %}
+{% block content %}
+<div class="login">
+    <header class="hero">
+        <h1>Play as a <span>bot</span></h1>
+        <p>Local testing only. This page exists because DEV_LOGIN=1 is set.</p>
+    </header>
+    {% if bots %}
+    <ul class="rows card">
+        {% for bot in bots %}
+        <li class="row">
+            <div class="who-col">
+                <div class="handle">{{ bot.username }}</div>
+                <div class="sub">Level {{ bot.level }} · ${{ "{:,}".format(bot.money) }}</div>
+            </div>
+            <form method="POST" action="{{ url_for('dev.dev_login', user_id=bot.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-brass btn-sm">Play</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="fine-print">No bots yet. Run <code>uv run flask --app mafia_hustle bots add</code> first.</p>
+    {% endif %}
+</div>
+{% endblock %}

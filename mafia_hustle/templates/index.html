@@ -1,31 +1,137 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="row g-4">
-    <aside class="col-md-3 text-center">
-        <img src="{{ current_user.avatar_url or url_for('static', filename='default_avatar.png') }}"
-             alt="" class="user-avatar mb-2" referrerpolicy="no-referrer">
-        <h4 class="text-break">{{ current_user.username }}</h4>
-        <dl id="stats" class="row text-start small mt-3"></dl>
+<header class="topbar">
+    <a class="wordmark" href="{{ url_for('game.index') }}">
+        <img src="{{ url_for('static', filename='favicon.svg') }}" alt="">Mafia <span>Hustle</span>
+    </a>
+    <div class="who">
+        {% if current_user.avatar_url %}
+        <img class="avatar" src="{{ current_user.avatar_url }}" alt="" referrerpolicy="no-referrer">
+        {% endif %}
+        <span class="name">{{ current_user.display_name or current_user.username }}</span>
         <form method="POST" action="{{ url_for('auth.logout') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button class="btn btn-outline-danger btn-sm">Log out</button>
+            <button class="btn btn-ghost btn-sm">Log out</button>
         </form>
-    </aside>
+    </div>
+</header>
 
-    <main class="col-md-5">
-        <h1 class="mb-3">The Streets</h1>
-        <div class="d-flex gap-2 mb-3">
-            <button id="run-job-btn" class="btn btn-secondary">Run a job</button>
-            <button id="heal-up-btn" class="btn btn-success">Find food</button>
-        </div>
-        <ul id="action-log" class="list-group"></ul>
+<section class="status" aria-label="Your status">
+    <div class="meter health" id="bar-health"></div>
+    <div class="meter energy" id="bar-energy"></div>
+    <div class="meter stamina" id="bar-stamina"></div>
+    <div class="figure"><div class="label">Cash</div><div class="value cash num" id="cash">…</div></div>
+    <div class="figure"><div class="label">Bank</div><div class="value num" id="bank">…</div></div>
+    <div class="level-chip">
+        <div class="badge num" id="level" title="Level">1</div>
+        <div class="meter xp" id="bar-xp"></div>
+        <button class="points-pill" id="points-pill" hidden></button>
+    </div>
+</section>
+
+<div class="layout">
+    <main>
+        <nav class="tabs" role="tablist" aria-label="Game sections">
+            <button class="tab" role="tab" data-tab="jobs">Jobs</button>
+            <button class="tab" role="tab" data-tab="fight">Fight</button>
+            <button class="tab" role="tab" data-tab="shop">Shop</button>
+            <button class="tab" role="tab" data-tab="rackets">Rackets</button>
+            <button class="tab" role="tab" data-tab="bank">Bank</button>
+            <button class="tab" role="tab" data-tab="profile">Profile</button>
+        </nav>
+
+        <section role="tabpanel" id="tab-jobs">
+            <div class="section-head">
+                <h2>Jobs</h2>
+                <p>Each job costs energy. Energy comes back by itself, one point a minute.</p>
+            </div>
+            <div class="grid" id="jobs"></div>
+        </section>
+
+        <section role="tabpanel" id="tab-fight" hidden>
+            <div class="section-head">
+                <h2>Fight</h2>
+                <button class="btn btn-sm" id="reshuffle">Find other marks</button>
+            </div>
+            <div class="powers">
+                <div class="power"><div class="label">Your attack</div><div class="value num" id="power-attack"></div></div>
+                <div class="power"><div class="label">Your defense</div><div class="value num" id="power-defense"></div></div>
+            </div>
+            <ul class="rows" id="targets"></ul>
+            <div class="doc card">
+                <div>
+                    <h3>The Doc</h3>
+                    <p id="doc-text"></p>
+                </div>
+                <button class="btn btn-red" id="hospital-btn">Get patched up</button>
+            </div>
+        </section>
+
+        <section role="tabpanel" id="tab-shop" hidden>
+            <div class="section-head">
+                <h2>Shop</h2>
+                <p>Only your best weapon, armor and ride count in a fight.</p>
+            </div>
+            <div id="shop"></div>
+        </section>
+
+        <section role="tabpanel" id="tab-rackets" hidden>
+            <div class="section-head">
+                <h2>Rackets</h2>
+                <p id="income-text"></p>
+            </div>
+            <div class="doc card" style="margin: 0 0 1.25rem">
+                <div>
+                    <h3 class="num" id="uncollected">$0</h3>
+                    <p id="cap-text"></p>
+                </div>
+                <button class="btn btn-brass" id="collect-btn">Collect</button>
+            </div>
+            <div class="grid" id="rackets"></div>
+        </section>
+
+        <section role="tabpanel" id="tab-bank" hidden>
+            <div class="section-head">
+                <h2>Bank</h2>
+                <p id="bank-text"></p>
+            </div>
+            <div class="vault">
+                <div class="power"><div class="label">In your pocket</div><div class="value num" id="vault-cash"></div></div>
+                <div class="power"><div class="label">In the vault</div><div class="value num" id="vault-bank"></div></div>
+            </div>
+            <form class="field" id="bank-form">
+                <label class="sr-only" for="amount">Amount</label>
+                <input id="amount" type="number" min="1" step="1" inputmode="numeric" placeholder="Amount">
+                <button class="btn btn-brass" type="submit" data-direction="deposit">Deposit</button>
+                <button class="btn" type="submit" data-direction="withdraw">Withdraw</button>
+                <button class="btn btn-ghost" type="button" id="deposit-all">Deposit it all</button>
+            </form>
+        </section>
+
+        <section role="tabpanel" id="tab-profile" hidden>
+            <div class="section-head">
+                <h2>Profile</h2>
+                <p id="skill-text"></p>
+            </div>
+            <dl class="stats" id="stats"></dl>
+            <h3 class="slot-title">Spend skill points</h3>
+            <div class="skills" id="skills"></div>
+        </section>
     </main>
 
-    <aside class="col-md-4">
-        <h4>Leaderboard</h4>
-        <ul id="leaderboard" class="list-group"></ul>
+    <aside class="side">
+        <section class="card">
+            <div class="section-head"><h2>The Wire</h2></div>
+            <ul class="wire-list" id="wire" aria-live="polite"></ul>
+        </section>
+        <section class="card board">
+            <div class="section-head"><h2>Most Wanted</h2></div>
+            <ol class="rows" id="leaderboard"></ol>
+        </section>
     </aside>
 </div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 {% endblock %}
 {% block scripts %}
 <script>window.CURRENT_USER_ID = {{ current_user.id | tojson }};</script>

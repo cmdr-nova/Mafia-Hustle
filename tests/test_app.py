@@ -30,7 +30,7 @@ def test_csrf_is_enforced():
             "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         }
     )
-    response = app.test_client().post("/api/heal-up")
+    response = app.test_client().post("/api/do/hospital")
     assert response.status_code == 400
     with app.app_context():
         db.engine.dispose()

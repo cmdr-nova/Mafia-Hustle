@@ -69,10 +69,10 @@ def test_game_actions_are_rate_limited(make_app):
         with client.session_transaction() as session:
             session["_user_id"] = str(user.id)
 
-    codes = [client.post("/api/heal-up").status_code for _ in range(3)]
+    codes = [client.post("/api/do/hospital").status_code for _ in range(3)]
     assert codes[:2] == [200, 200]
     assert codes[2] == 429
-    assert "Slow down" in client.post("/api/heal-up").get_json()["error"]
+    assert "Slow down" in client.post("/api/do/hospital").get_json()["error"]
 
 
 def test_login_attempts_are_rate_limited_per_ip(make_app):
@@ -98,3 +98,22 @@ def test_behind_a_proxy_each_player_ip_gets_its_own_limit(make_app):
     assert not any(attempt("1.1.1.1") for _ in range(10))
     assert attempt("1.1.1.1")
     assert not attempt("2.2.2.2")
+
+
+def test_concurrent_writers_take_turns(make_app, tmp_path):
+    """Two connections can't both hold the write lock, so a second purchase waits for the first
+    to commit and then sees the reduced cash instead of spending the same money twice."""
+    import sqlite3
+
+    from mafia_hustle.game import lock_for_write
+
+    app = make_app()
+    with app.app_context():
+        lock_for_write()
+        other = sqlite3.connect(tmp_path / "game.db", timeout=0.1)
+        with pytest.raises(sqlite3.OperationalError, match="locked"):
+            other.execute("BEGIN IMMEDIATE")
+        db.session.commit()
+        other.execute("BEGIN IMMEDIATE")
+        other.rollback()
+        other.close()

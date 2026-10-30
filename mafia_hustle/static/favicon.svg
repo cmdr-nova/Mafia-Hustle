@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#17110f"/>
+  <!-- crown of the hat, pinched at the top -->
+  <path d="M17 41 C17 30 18 21 22 17 C25 14 29 19 32 17 C35 19 39 14 42 17 C46 21 47 30 47 41 Z" fill="#d4a93c"/>
+  <!-- hat band -->
+  <path d="M17.2 35 H46.8 V41 H17.2 Z" fill="#b8322a"/>
+  <!-- brim -->
+  <ellipse cx="32" cy="43" rx="25" ry="6" fill="#d4a93c"/>
+  <ellipse cx="32" cy="41.5" rx="15" ry="2.2" fill="#9c7a26"/>
+</svg>
