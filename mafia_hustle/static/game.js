@@ -60,7 +60,7 @@ async function refreshBoards() {
         getJSON('/api/leaderboard'),
     ]);
     renderTargets(targets.targets);
-    renderLeaderboard(board.leaderboard);
+    renderLeaderboard(board.leaderboard, board.me);
 }
 
 // --- The Wire and toasts -----------------------------------------------------------------------
@@ -317,14 +317,21 @@ function renderTargets(targets) {
             }, 'Jump them'))));
 }
 
-function renderLeaderboard(players) {
-    $('leaderboard').replaceChildren(...players.map((p, i) =>
-        h('li', { className: `row ${p.alive ? '' : 'dead'}` },
-            h('span', { className: 'rank' }, i + 1),
-            monogram(p),
-            h('div', { className: 'who-col' },
-                playerName(p),
-                h('div', { className: 'sub' }, `Level ${p.level} · ${p.kills} kills`)))));
+function leaderRow(p, rank) {
+    const mine = p.id === window.CURRENT_USER_ID;
+    return h('li', { className: `row ${p.alive ? '' : 'dead'} ${mine ? 'me' : ''}` },
+        h('span', { className: 'rank' }, rank),
+        monogram(p),
+        h('div', { className: 'who-col' },
+            playerName(p),
+            h('div', { className: 'sub' }, `Level ${p.level} · ${p.kills} kills`)));
+}
+
+function renderLeaderboard(players, me) {
+    const rows = players.map((p, i) => leaderRow(p, i + 1));
+    // Outside the top 10? Pin your own spot underneath so you know where you stand.
+    if (me) rows.push(h('li', { className: 'gap', ariaHidden: 'true' }, '⋯'), leaderRow(me, me.rank));
+    $('leaderboard').replaceChildren(...rows);
 }
 
 // --- Tabs and forms ----------------------------------------------------------------------------

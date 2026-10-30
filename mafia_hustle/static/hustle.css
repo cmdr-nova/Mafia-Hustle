@@ -367,7 +367,9 @@ a.identity-handle:hover { color: var(--brass-hi); text-decoration: underline; }
 .wire-list time { display: block; font: .7rem var(--body); color: var(--faint); }
 @keyframes flash { from { background: rgba(212, 169, 60, .18); } to { background: transparent; } }
 
-.board .rank { width: 1.6rem; font: 1.1rem/1 var(--display); color: var(--brass); text-align: center; }
+.board .rank { min-width: 1.6rem; font: 1.1rem/1 var(--display); color: var(--brass); text-align: center; }
+.board .row.me { border-color: var(--brass); background: linear-gradient(90deg, rgba(212, 169, 60, .12), var(--card) 60%); }
+.board .gap { list-style: none; text-align: center; color: var(--faint); line-height: 1; letter-spacing: .2em; }
 .board .row.dead .handle { text-decoration: line-through; color: var(--muted); }
 
 /* --- Toast ---------------------------------------------------------------------------------- */
