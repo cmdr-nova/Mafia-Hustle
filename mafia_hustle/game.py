@@ -4,10 +4,13 @@ from flask import Blueprint, jsonify, render_template, request
 from flask_login import current_user, login_required
 
 from . import rules
-from .extensions import db
+from .extensions import db, limiter
 from .models import User
 
 bp = Blueprint("game", __name__)
+
+# Plenty for a human clicking, not enough for a script hammering the server.
+ACTION_LIMIT = "2 per second;60 per minute"
 
 
 def player_json(user):
@@ -61,6 +64,7 @@ def leaderboard():
 
 @bp.post("/api/attack")
 @login_required
+@limiter.limit(ACTION_LIMIT)
 def attack():
     defender_id = (request.get_json(silent=True) or {}).get("defender_id")
     defender = db.session.get(User, defender_id) if isinstance(defender_id, int) else None
@@ -74,15 +78,30 @@ def attack():
 
 @bp.post("/api/run-job")
 @login_required
+@limiter.limit(ACTION_LIMIT)
 def run_job():
-    targets = db.session.scalars(db.select(User).where(User.id != current_user.id)).all()
-    message = rules.run_job(current_user, targets, random)
+    message = rules.run_job(current_user, random_other_player(current_user), random)
     db.session.commit()
     return jsonify({"message": message})
 
 
+def random_other_player(user):
+    """Pick one random player who isn't `user`, without loading everyone into memory."""
+    count = db.session.scalar(db.select(db.func.count(User.id)).where(User.id != user.id))
+    if not count:
+        return None
+    return db.session.scalars(
+        db.select(User)
+        .where(User.id != user.id)
+        .order_by(User.id)
+        .offset(random.randrange(count))  # noqa: S311 - game dice, not security
+        .limit(1)
+    ).first()
+
+
 @bp.post("/api/heal-up")
 @login_required
+@limiter.limit(ACTION_LIMIT)
 def heal_up():
     message = rules.heal_up(current_user, random)
     db.session.commit()

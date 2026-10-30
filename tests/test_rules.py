@@ -68,21 +68,21 @@ def test_run_job_never_drives_money_negative():
     rng = random.Random(3)
     for _ in range(5):
         robber.health = 100
-        rules.run_job(robber, [broke], rng)
+        rules.run_job(robber, broke, rng)
     assert broke.money == 0
     assert robber.money == 1005
 
 
 def test_run_job_message_has_no_stray_dollar_signs():
     robber, mark = player(id=1), player(id=2, username="fredo")
-    message = rules.run_job(robber, [mark], random.Random(7))
+    message = rules.run_job(robber, mark, random.Random(7))
     assert message.count("$") == 1  # just the amount
     assert "$fredo" not in message
 
 
 def test_run_job_with_nobody_to_rob():
     p = player()
-    assert "Nobody to rob" in rules.run_job(p, [], random.Random(1))
+    assert "Nobody to rob" in rules.run_job(p, None, random.Random(1))
     assert p.money == 1000
 
 
