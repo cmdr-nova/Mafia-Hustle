@@ -23,7 +23,7 @@ class User(db.Model, UserMixin):
     # Stable account id on that network: "<instance>:<account id>" or a DID. Handles can change,
     # so this is what we match on when someone logs in again.
     subject: Mapped[str] = mapped_column(String(300))
-    # Shown in the game, e.g. "@vito@mkultra.social" or "vito.bsky.social". Refreshed every login.
+    # Shown in the game, e.g. "@vito@fedi.example.org" or "vito.bsky.social". Refreshed every login.
     username: Mapped[str] = mapped_column(String(300))
     display_name: Mapped[str | None] = mapped_column(String(200))
     avatar_url: Mapped[str | None] = mapped_column(String(500))

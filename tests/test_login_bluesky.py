@@ -15,9 +15,9 @@ from mafia_hustle.models import User
 from mafia_hustle.oauth import atproto
 
 LOCAL = "http://127.0.0.1:5000"
-HANDLE = "vito.mkultra.social"
+HANDLE = "vito.fedi.example.org"
 DID = "did:plc:vito123"
-PDS = "https://pds.mkultra.social"
+PDS = "https://pds.fedi.example.org"
 
 
 class FakeAuthServer:
@@ -168,7 +168,7 @@ def test_full_login_with_handle(local_client):
     mock_identity(responses)
     server = FakeAuthServer(responses)
 
-    location = urlsplit(start(local_client, "@Vito.MKULTRA.social"))
+    location = urlsplit(start(local_client, "@Vito.FEDI.Example.ORG"))
     assert f"{location.scheme}://{location.netloc}{location.path}" == f"{PDS}/oauth/authorize"
     assert parse_qs(location.query)["request_uri"] == ["urn:par:1"]
     assert server.par["scope"] == "atproto"
@@ -215,7 +215,7 @@ def test_server_that_doesnt_own_the_account_is_rejected(local_client):
 @responses.activate
 def test_different_account_than_requested_is_rejected(local_client):
     mock_identity(responses)
-    mock_identity(responses, did="did:plc:sonny", handle="sonny.mkultra.social")
+    mock_identity(responses, did="did:plc:sonny", handle="sonny.fedi.example.org")
     server = FakeAuthServer(responses, sub="did:plc:sonny")
     start(local_client)
     assert finish(local_client, server).headers["Location"] == "/login"
@@ -249,10 +249,10 @@ def test_local_login_needs_127_0_0_1(client):
 def test_client_metadata_only_served_with_public_url(app, client):
     assert client.get("/oauth/client-metadata.json").status_code == 404
 
-    app.config["PUBLIC_URL"] = "https://hustle.mkultra.monster"
+    app.config["PUBLIC_URL"] = "https://hustle.example.org"
     meta = client.get("/oauth/client-metadata.json").get_json()
-    assert meta["client_id"] == "https://hustle.mkultra.monster/oauth/client-metadata.json"
-    assert meta["redirect_uris"] == ["https://hustle.mkultra.monster/login/bluesky/callback"]
+    assert meta["client_id"] == "https://hustle.example.org/oauth/client-metadata.json"
+    assert meta["redirect_uris"] == ["https://hustle.example.org/login/bluesky/callback"]
     assert meta["scope"] == "atproto"
     assert meta["token_endpoint_auth_method"] == "none"
     assert meta["dpop_bound_access_tokens"] is True
