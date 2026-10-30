@@ -10,6 +10,10 @@ so they follow exactly the same rules.
     flask --app mafia_hustle bots remove     # delete every bot and everything they own
 
 On the server, deploy/mafia-hustle-bots.timer runs `bots tick` every few minutes.
+
+Bots stay small on purpose, so they're sparring partners for new players rather than
+noob-stompers: once a bot passes MAX_LEVEL it retires, and a fresh level 1 bot with a new name
+takes its spot. They also leave alone people more than a level below them.
 """
 
 import random
@@ -47,6 +51,27 @@ CREW = [
     Personality("nickels", "Nickels O'Hare", 0.2, ("energy", "defense", "energy")),
 ]
 CREW_BY_SLUG = {p.slug: p for p in CREW}
+
+# Bots retire once they pass this level. Below the level 6 jobs and most of the shop.
+MAX_LEVEL = 5
+# A bot won't jump a person whose level is more than this far below its own.
+MAX_LEVEL_GAP = 1
+
+# Names for the bots that replace retired ones.
+# fmt: off
+FIRST_NAMES = (
+    "Sal", "Rosie", "Augie", "Mae", "Lou", "Fern", "Vinnie", "Hattie", "Joey", "Ida",
+    "Benny", "Opal", "Carmine", "Lottie", "Gus", "Pearl", "Mickey", "Dot", "Artie", "June",
+)
+NICKNAMES = (
+    "the Stapler", "Two-Tone", "Lucky", "Fingers", "the Mouse", "Sixpence", "Big Shoes",
+    "the Clerk", "Ace", "Whispers", "Dimes", "the Parrot", "Slick", "Cannoli", "Buttons",
+)
+LAST_NAMES = (
+    "Bianchi", "Kowalski", "Doyle", "Ferraro", "Lindqvist", "Marchetti", "Okafor", "Brannigan",
+    "Castellano", "Novak", "Riordan", "Szabo", "Vitale", "Abernathy", "Delgado", "Quinlan",
+)
+# fmt: on
 
 cli = AppGroup("bots", help="Computer players for testing and atmosphere.")
 dev_bp = Blueprint("dev", __name__, url_prefix="/dev")
@@ -96,7 +121,11 @@ def take_turn(bot, rng, now):
     for _ in range(bot.stamina):
         if bot.health < rules.MIN_FIGHT_HEALTH or rng.random() > me.aggression:
             break
-        targets = find_targets(bot, limit=3)
+        targets = [
+            t
+            for t in find_targets(bot, limit=6)
+            if t.is_bot or t.level >= bot.level - MAX_LEVEL_GAP
+        ]
         if not targets:
             break
         do("attack", defender_id=rng.choice(targets).id)
@@ -181,10 +210,35 @@ def tick_command(quiet):
     for bot_id in [b.id for b in all_bots()]:
         lock_for_write()
         bot = db.session.get(User, bot_id, populate_existing=True, with_for_update=True)
+        name = bot.username
         log = take_turn(bot, rng, utcnow())
+        if bot.level > MAX_LEVEL:
+            log.append(f"Retired. {retire(bot, rng).username} takes over.")
         db.session.commit()
         if not quiet:
-            click.echo(f"{bot.username}: " + (" | ".join(log) or "laid low."))
+            click.echo(f"{name}: " + (" | ".join(log) or "laid low."))
+
+
+def fresh_name(rng):
+    first, last = rng.choice(FIRST_NAMES), rng.choice(LAST_NAMES)
+    if rng.random() < 0.5:
+        return f"{first} '{rng.choice(NICKNAMES)}' {last}"
+    return f"{first} {last}"
+
+
+def retire(bot, rng):
+    """Replace `bot` with a brand new level 1 bot that keeps its personality slot. The old one
+    is deleted along with everything it owned; it falls off the leaderboard."""
+    subject = bot.subject
+    db.session.execute(db.delete(Holding).where(Holding.user_id == bot.id))
+    db.session.execute(db.delete(Event).where(Event.user_id == bot.id))
+    db.session.delete(bot)
+    db.session.flush()
+    name = fresh_name(rng)
+    rookie = User(provider="bot", subject=subject, username=name, display_name=name)
+    db.session.add(rookie)
+    db.session.flush()
+    return rookie
 
 
 # --- Local testing -----------------------------------------------------------------------------

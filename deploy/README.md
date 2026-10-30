@@ -109,7 +109,7 @@ Revert the bad commit on `main` (`git revert`, or the Revert button on the PR). 
 
 ## Bots
 
-Bots are computer players: someone to fight, someone who robs you while you sleep, and a quick way to test changes. They can't log in, and they play by the same rules as everyone else. They show up with a "bot" tag in the game.
+Bots are computer players: someone to fight, someone who robs you while you sleep, and a quick way to test changes. They can't log in, and they play by the same rules as everyone else. They show up with a "bot" tag in the game. To keep them from bullying new players, a bot that passes level 5 retires and a fresh level 1 bot takes its place (`MAX_LEVEL` in `mafia_hustle/bots.py`), and bots never jump people more than a level below them.
 
 **Turn them on.** Create the crew once, then install the timer that gives each of them a turn every 5 minutes:
 
