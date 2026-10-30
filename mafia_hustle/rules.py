@@ -10,14 +10,16 @@ and change it in place. game.py loads it from the database and saves it back.
 from dataclasses import dataclass
 from datetime import timedelta
 
-from .catalog import GEAR_BY_KEY, RACKETS_BY_KEY, SLOTS
+from .catalog import GEAR_BY_KEY, RACKET_COPY_GROWTH, RACKETS_BY_KEY, SLOTS
 
 MAX_LEVEL = 60
 BASE_HEALTH = 100
 HEALTH_PER_LEVEL = 10
 SKILL_POINTS_PER_LEVEL = 3
-# Seconds for each bar to gain one point.
-REGEN_SECONDS = {"energy": 60, "stamina": 120, "health": 20}
+# Seconds for each bar to gain one point. Energy and stamina are slow on purpose: a full refill
+# of the starting bars takes most of a day (20 energy in 10 hours, 10 stamina in 10 hours), so
+# you play a session, then come back tomorrow. Health stays quick so a beating isn't a lockout.
+REGEN_SECONDS = {"energy": 30 * 60, "stamina": 60 * 60, "health": 20}
 # Racket income piles up for at most this long before someone has to come collect it.
 INCOME_CAP_HOURS = 12
 BANK_FEE_PERCENT = 10
@@ -130,6 +132,15 @@ def seconds_to_next(user, bar, now):
     if getattr(user, bar) >= bar_max(user, bar) or at is None:
         return None
     return max(0, REGEN_SECONDS[bar] - int((now - at).total_seconds()))
+
+
+def seconds_to_full(user, bar, now):
+    """Seconds until `bar` is completely full, or None when it already is."""
+    next_in = seconds_to_next(user, bar, now)
+    if next_in is None:
+        return None
+    missing = bar_max(user, bar) - getattr(user, bar)
+    return next_in + (missing - 1) * REGEN_SECONDS[bar]
 
 
 def take_damage(user, amount):
@@ -292,8 +303,8 @@ def buy_gear(user, gear, holdings):
 
 
 def racket_price(racket, owned):
-    """Each racket of a kind costs 15% more than the last."""
-    return round(racket.price * 1.15**owned, -1)
+    """Each extra racket of a kind costs RACKET_COPY_GROWTH times the last, to the nearest $10."""
+    return int(round(racket.price * RACKET_COPY_GROWTH**owned, -1))
 
 
 def income_per_hour(holdings):

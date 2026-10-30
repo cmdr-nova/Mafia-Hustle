@@ -71,13 +71,29 @@ GEAR = [
     Gear("speedboat", "Rum-runner speedboat", "ride", 7, 5, 40000, 25),
 ]
 
+# fmt: off
+# Racket prices grow exponentially down the list: each tier costs RACKET_TIER_GROWTH times the
+# one before ($2k, $10k, $50k, $250k, $1.25M, $6.25M, ...). Income grows slower than price, so
+# later rackets take longer to pay for themselves. A racket added to the end of the list is
+# priced automatically, and it costs more than everything above it.
+RACKET_BASE_PRICE = 2000
+RACKET_TIER_GROWTH = 5
+# Each extra copy of the same racket costs this much more than the last one.
+RACKET_COPY_GROWTH = 1.25
+
+_RACKETS = [
+    # key           name               blurb                          $/hour  level
+    ("shoeshine",  "Shoeshine stand", "Shines shoes, passes notes.",     40,  1),
+    ("laundromat", "Laundromat",      "Washes more than shirts.",       150,  3),
+    ("bar",        "Corner bar",      "Last call is a suggestion.",     450,  8),
+    ("pawnshop",   "Pawn shop",       "No questions asked.",           1200, 15),
+    ("nightclub",  "Nightclub",       "Live jazz, back door.",         3600, 25),
+    ("casino",     "Casino floor",    "Odds in our favor.",           12000, 40),
+]
+# fmt: on
 RACKETS = [
-    Racket("shoeshine", "Shoeshine stand", "Shines shoes, passes notes.", 1500, 40, 1),
-    Racket("laundromat", "Laundromat", "Washes more than shirts.", 6000, 150, 3),
-    Racket("bar", "Corner bar", "Last call is a suggestion.", 20000, 450, 8),
-    Racket("pawnshop", "Pawn shop", "No questions asked.", 60000, 1200, 15),
-    Racket("nightclub", "Nightclub", "Live jazz, back door.", 200000, 3600, 25),
-    Racket("casino", "Casino floor", "Odds in our favor.", 750000, 12000, 40),
+    Racket(key, name, blurb, RACKET_BASE_PRICE * RACKET_TIER_GROWTH**tier, income, level)
+    for tier, (key, name, blurb, income, level) in enumerate(_RACKETS)
 ]
 
 JOBS_BY_KEY = {j.key: j for j in JOBS}

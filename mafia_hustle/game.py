@@ -142,6 +142,7 @@ def player_state(user, holdings, now):
                 "value": getattr(user, bar),
                 "max": rules.bar_max(user, bar),
                 "next_in": rules.seconds_to_next(user, bar, now),
+                "full_in": rules.seconds_to_full(user, bar, now),
                 "every": rules.REGEN_SECONDS[bar],
             }
             for bar in rules.REGEN_SECONDS
